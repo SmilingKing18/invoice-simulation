@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Invoice Simulation Game</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <!-- Demographics Modal -->
+  <div id="demo-modal" class="modal active">
+    <div class="modal-content">
+      <h2>Tell us about yourself</h2>
+      <form id="demo-form">
+        <label>Age Range:
+          <select id="age_range">
+            <option value="Under 18">Under 18</option>
+            <option value="18-24">18-24</option>
+            <option value="25-34">25-34</option>
+            <option value="35-44">35-44</option>
+            <option value="45-54">45-54</option>
+            <option value="55-64">55-64</option>
+            <option value="65+">65+</option>
+          </select>
+        </label>
+        <label>Gender:
+          <select id="gender">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+            <option value="Prefer not to say">Prefer not to say</option>
+          </select>
+        </label>
+        <label>Education:
+          <select id="education">
+            <option value="High School">High School</option>
+            <option value="Bachelor's">Bachelor's</option>
+            <option value="Master's">Master's</option>
+            <option value="Doctorate">Doctorate</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+        <button type="submit">Start Experiment</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Top Navigation Bar -->
+  <div class="top-nav">
+    <div class="logo">My Outlook Clone</div>
+    <div class="nav-items">
+      <div class="nav-item"><i class="fa fa-inbox"></i> Inbox</div>
+      <div class="nav-item"><i class="fa fa-paper-plane"></i> Sent</div>
+      <div class="nav-item" onclick="refreshInvoices()"><i class="fa fa-sync"></i> Refresh</div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="main-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>Folders</h2>
+      <ul>
+        <li><i class="fa fa-folder-open"></i> Inbox</li>
+        <li><i class="fa fa-archive"></i> Archive</li>
+        <li><i class="fa fa-trash"></i> Spam</li>
+      </ul>
+    </div>
+
+    <!-- Message List -->
+    <div class="message-list">
+      <div class="message-list-header">
+        <button class="tab-button active">Focused</button>
+        <button class="tab-button">Other</button>
+      </div>
+      <div class="message-list-content" id="invoice-list">
+        {% for inv in invoices %}
+        <div class="message-item" id="invoice-item-{{ inv.round }}" onclick="selectInvoice({{ inv.round }})">
+          <i class="fa fa-file-invoice"></i>
+          <div class="message-details">
+            <div class="message-sender">Invoice Bot</div>
+            <div class="message-subject">Invoice {{ inv.round }}: {{ inv.name }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Reading Pane -->
+    <div class="reading-pane" id="invoice-details">
+      <div class="reading-pane-header">
+        <h2 id="invoice-title">Subject</h2>
+        <div class="sender-info">From: Invoice Bot &lt;no-reply@invoicebot.com&gt; | CC: you@example.com</div>
+      </div>
+      <div class="reading-pane-body" id="invoice-message"></div>
+      <div class="reading-pane-actions" id="response-buttons">
+        <button onclick="recordResponse('Pay Immediately')">Pay Immediately</button>
+        <button onclick="recordResponse('Delay Payment')">Delay Payment</button>
+        <button onclick="recordResponse('Ignore Invoice')">Ignore Invoice</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rating Modal -->
+  <div id="rating-modal" class="modal">
+    <div class="modal-content">
+      <h2>Quick Feedback</h2>
+      <div class="scale-group" data-question="urgency">
+        <p>Perceived Urgency:</p>
+        <div class="scale"></div>
+      </div>
+      <div class="scale-group" data-question="arousal">
+        <p>Emotional Arousal:</p>
+        <div class="scale"></div>
+      </div>
+      <div class="scale-group" data-question="persuasion">
+        <p>Persuasiveness:</p>
+        <div class="scale"></div>
+      </div>
+      <div class="scale-group" data-question="trust">
+        <p>Trust in Sender:</p>
+        <div class="scale"></div>
+      </div>
+      <button id="submit-scales">Submit Feedback</button>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

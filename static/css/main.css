@@ -1,0 +1,32 @@
+/* Paste all styles from the previous template */
+* { margin:0; padding:0; box-sizing:border-box; font-family:Arial, sans-serif; }
+body { display:flex; flex-direction:column; height:100vh; color:#444; overflow:hidden; }
+.modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5);
+         display:flex; align-items:center; justify-content:center;
+         opacity:0; pointer-events:none; transition:opacity .3s ease; }
+.modal.active { opacity:1; pointer-events:auto; }
+.modal-content { background:#fff; padding:20px; border-radius:8px; width:90%; max-width:400px; box-shadow:0 4px 12px rgba(0,0,0,0.15); }
+.modal-content h2 { margin-bottom:15px; font-size:1.2em; color:#0078d4; }
+.modal-content label, .modal-content select { display:block; width:100%; margin-bottom:10px; }
+.modal-content button { margin-top:15px; padding:8px 12px; background:#0078d4; color:#fff; border:none; border-radius:4px; cursor:pointer; }
+.scale-group { margin-bottom:15px; }
+.scale { display:flex; gap:8px; }
+.scale i { cursor:pointer; font-size:1.5em; color:#ccc; transition:color .2s; }
+.scale i.selected { color:#28a745; }
+.top-nav { background:#f3f3f3; border-bottom:1px solid #ccc; display:flex; align-items:center; padding:0 15px; height:48px; }
+.logo { font-weight:bold; color:#0078d4; margin-right:20px; }
+.nav-items { display:flex; gap:15px; }
+.nav-item { cursor:pointer; color:#0078d4; }
+.main-container { flex:1; display:flex; }
+.sidebar { width:200px; background:#f3f3f3; padding:10px; overflow-y:auto; border-right:1px solid #ccc; }
+.sidebar h2 { font-size:12px; color:#666; margin-bottom:8px; text-transform:uppercase; }
+.sidebar ul { list-style:none; }
+.sidebar li { padding:6px 0; cursor:pointer; }
+.message-list { width:320px; border-right:1px solid #ccc; display:flex; flex-direction:column; }
+.message-list-header { display:flex; padding:10px; border-bottom:1px solid #ccc; background:#fafafa; }
+.tab-button { background:none; border:none; cursor:pointer; font-weight:bold; color:#0078d4; padding:8px 12px; }
+.tab-button.active { border-bottom:2px solid #0078d4; }
+.message-list-content { flex:1; overflow-y:auto; }
+.message-item { padding:12px; border-bottom:1px solid #eee; cursor:pointer; display:flex; align-items:center; gap:10px; }
+.reading-pane { flex:1; padding:15px; display:none; flex-direction:column; overflow-y:auto; }
+.reading-pane.active { display:flex; }
