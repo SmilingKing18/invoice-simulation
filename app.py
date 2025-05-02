@@ -13,6 +13,8 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.secret_key = os.getenv('SECRET_KEY')
     db.init_app(app)
+    with app.app_context():
+        db.create_all()
     Migrate(app, db)
 
     @app.before_request
