@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
+
+  
   <!-- Demographics Modal -->
   <div id="demo-modal" class="modal active">
     <div class="modal-content">
@@ -135,15 +137,17 @@
   <div class="main-container">
     <div class="message-list">
       <div class="message-list-header"><button class="tab-button active">Invoices</button></div>
-      <div class="message-list-content" id="invoice-list">
-        {% for inv in invoices %}
-          <div class="message-item" id="invoice-item-{{inv.round}}" onclick="selectInvoice({{inv.round}})">
-            <i class="fa fa-file-invoice"></i>
-            <div>{{inv.company}}</div>
-          </div>
+      <div class="message-item"
+          id="invoice-item-{{ inv.round }}"
+          data-message="{{ inv.message | e }}"
+          data-logo="{{ inv.logo_url }}"
+          data-address="{{ inv.address | e }}"
+    >
+      <i class="fa fa-file-invoice"></i>
+      <div>{{ inv.company }}</div>
+    </div>
         {% endfor %}
       </div>
-    </div>
     <div class="reading-pane" id="invoice-details"></div>
   </div>
 
