@@ -1,3 +1,4 @@
+# app.py
 import os
 from flask import Flask, request, jsonify, render_template, make_response, send_file
 from flask_migrate import Migrate
@@ -13,33 +14,35 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.secret_key = os.getenv('SECRET_KEY')
     db.init_app(app)
-    with app.app_context():
-        db.create_all()
     Migrate(app, db)
 
-    @app.before_request
     @app.before_request
     def ensure_session():
         sid = request.cookies.get('session_id')
         sess = None
         if sid:
             sess = Session.query.get(sid)
-        # If no cookie or no matching session in DB, create a new session
+        # If no cookie or stale session, create
         if not sid or sess is None:
             new_sid = uuid.uuid4().hex
-            # create session record
+            # create session and invoices
             new_sess = Session(session_id=new_sid)
             db.session.add(new_sess)
-            # populate invoices
             for inv in generate_invoices():
                 inv['session_id'] = new_sid
                 db.session.add(Invoice(**inv))
             db.session.commit()
-            # set cookie for client
-            resp = make_response()
-            resp.set_cookie('session_id', new_sid, httponly=True)
-            return resp
-        
+            # mark to set cookie later
+            from flask import g
+            g.new_session_id = new_sid
+
+    @app.after_request
+    def add_session_cookie(response):
+        from flask import g
+        if hasattr(g, 'new_session_id'):
+            response.set_cookie('session_id', g.new_session_id, httponly=True)
+        return response
+
     @app.route('/')
     def index():
         sid = request.cookies.get('session_id')
@@ -135,7 +138,7 @@ def create_app():
         for inv in invoices:
             writer.writerow([inv.id, inv.session_id, inv.company, inv.round, inv.action_choice, inv.amount_due, inv.plan_details, inv.question_text, inv.receipt_code, inv.block_rating, inv.final_q1, inv.final_q2, inv.final_q3, inv.final_comments])
         buf.seek(0)
-        return send_file(io.BytesIO(buf.read().encode()), mimetype='text/csv', attachment_filename='invoices.csv')
+        return send_file(zip_buf, mimetype='application/zip', attachment_filename='all_data.zip').encode()), mimetype='text/csv', attachment_filename='invoices.csv')
 
     # Dev-only: download all data across sessions
     @app.route('/download-data-all')

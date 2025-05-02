@@ -1,0 +1,8 @@
+body { margin:0; font-family:sans-serif; }
+nav { display:flex; justify-content:space-between; padding:1rem; background:#f5f5f5; }
+#sidebar { width:200px; background:#fafafa; border-right:1px solid #ddd; }
+@media(max-width:600px){ #sidebar{display:none;} }
+.modal { display:none; opacity:0; transition:opacity .3s; }
+.modal.active { display:block; opacity:1; }
+.scale .bubble { width:32px; height:32px; border:1px solid #888; border-radius:50%; display:inline-block; margin:2px; }
+.scale .bubble.selected { background:green; }
