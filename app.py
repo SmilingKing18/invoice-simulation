@@ -18,20 +18,28 @@ def create_app():
     Migrate(app, db)
 
     @app.before_request
+    @app.before_request
     def ensure_session():
         sid = request.cookies.get('session_id')
-        if not sid:
-            sid = uuid.uuid4().hex
-            sess = Session(session_id=sid)
-            db.session.add(sess)
+        sess = None
+        if sid:
+            sess = Session.query.get(sid)
+        # If no cookie or no matching session in DB, create a new session
+        if not sid or sess is None:
+            new_sid = uuid.uuid4().hex
+            # create session record
+            new_sess = Session(session_id=new_sid)
+            db.session.add(new_sess)
             # populate invoices
             for inv in generate_invoices():
-                inv['session_id'] = sid
+                inv['session_id'] = new_sid
                 db.session.add(Invoice(**inv))
             db.session.commit()
+            # set cookie for client
             resp = make_response()
-            resp.set_cookie('session_id', sid, httponly=True)
+            resp.set_cookie('session_id', new_sid, httponly=True)
             return resp
+        
     @app.route('/')
     def index():
         sid = request.cookies.get('session_id')
