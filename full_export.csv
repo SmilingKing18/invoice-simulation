@@ -1,0 +1,13 @@
+id,session_id,round,name,principle,message,open_time,response_time,response_choice,urgency,arousal,persuasion,trust
+1,316270bc-f9bc-424a-89bb-7ff443647219,1,Loyalty Bonus,reciprocity,Your loyalty matters. Pay your invoice now and earn extra rewards for your future purchases.,,,,,,,
+2,316270bc-f9bc-424a-89bb-7ff443647219,2,Proactive Savings,loss aversion,Don't miss out on potential savings. Settle your invoice now to avoid extra fees.,,,,,,,
+3,316270bc-f9bc-424a-89bb-7ff443647219,3,Loyalty Bonus,reciprocity,Your loyalty matters. Pay your invoice now and earn extra rewards for your future purchases.,,,,,,,
+4,316270bc-f9bc-424a-89bb-7ff443647219,4,Loyalty Bonus,reciprocity,Your loyalty matters. Pay your invoice now and earn extra rewards for your future purchases.,,,,,,,
+5,316270bc-f9bc-424a-89bb-7ff443647219,5,Proactive Savings,loss aversion,Don't miss out on potential savings. Settle your invoice now to avoid extra fees.,,,,,,,
+6,771b0fdf-ae2a-4bbb-847b-71ff6d2561ae,1,Loyalty Bonus,reciprocity,Your loyalty matters. Pay your invoice now and earn extra rewards for your future purchases.,,,,,,,
+7,771b0fdf-ae2a-4bbb-847b-71ff6d2561ae,2,Combined: Loss Aversion & Social Proof,"loss aversion, social proof","Urgent: Most clients have already paid, and if you delay, you risk additional charges and service interruption.",,,,,,,
+8,771b0fdf-ae2a-4bbb-847b-71ff6d2561ae,3,Combined: Loss Aversion & Social Proof,"loss aversion, social proof","Urgent: Most clients have already paid, and if you delay, you risk additional charges and service interruption.",,,,,,,
+9,771b0fdf-ae2a-4bbb-847b-71ff6d2561ae,4,Early Bird Discount,scarcity,Act now to take advantage of our early bird discount before it expires.,,,,,,,
+10,771b0fdf-ae2a-4bbb-847b-71ff6d2561ae,5,Fast Track,efficiency,Experience a fast track process by paying your invoice immediately. Your efficiency is rewarded.,,,,,,,
+cat: +: No such file or directory
+id,session_id,age_range,gender,education,submitted_at

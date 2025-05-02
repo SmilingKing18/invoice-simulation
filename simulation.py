@@ -1,41 +1,74 @@
 import random
-import time
+import datetime
+import uuid
 
-def generate_invoices(num_rounds=5):
-    reminders = [
-        {"name": "Loss Aversion", "principle": "loss aversion", "message": "Alert: Your account is at risk of service interruption if the invoice is not paid by tomorrow. Avoid extra fees by paying now."},
-        {"name": "Reciprocity", "principle": "reciprocity", "message": "Thank you for your loyalty! As a token of our appreciation, settle your invoice today and receive a discount on your next service."},
-        {"name": "Social Proof", "principle": "social proof", "message": "Notice: 80% of your peers have already paid their invoices. Join them to continue enjoying uninterrupted service."},
-        {"name": "Combined: Loss Aversion & Social Proof", "principle": "loss aversion, social proof", "message": "Urgent: Most clients have already paid, and if you delay, you risk additional charges and service interruption."},
-        {"name": "Combined: Reciprocity & Social Proof", "principle": "reciprocity, social proof", "message": "We value your business and many of your peers have paid promptly. Settle this invoice now and receive an exclusive discount on your next order."},
-        {"name": "Early Bird Discount", "principle": "scarcity", "message": "Act now to take advantage of our early bird discount before it expires."},
-        {"name": "Limited Time Offer", "principle": "scarcity", "message": "This is a limited time offer. Settle your invoice now to secure your benefits."},
-        {"name": "Customer Appreciation", "principle": "reciprocity", "message": "We appreciate your continued support. Settle your invoice and enjoy special perks on your next order."},
-        {"name": "Loyalty Bonus", "principle": "reciprocity", "message": "Your loyalty matters. Pay your invoice now and earn extra rewards for your future purchases."},
-        {"name": "Exclusive Deal", "principle": "exclusivity", "message": "You're one of our valued customers. Settle this invoice to access an exclusive deal tailored for you."},
-        {"name": "Priority Service", "principle": "authority", "message": "Ensure priority service by settling your invoice promptly. Don’t miss out on our premium support."},
-        {"name": "Fast Track", "principle": "efficiency", "message": "Experience a fast track process by paying your invoice immediately. Your efficiency is rewarded."},
-        {"name": "Upgrade Opportunity", "principle": "aspiration", "message": "Unlock an upgrade opportunity by settling your invoice now and enjoy enhanced benefits."},
-        {"name": "Time-Sensitive Reminder", "principle": "urgency", "message": "Time is running out. Avoid service interruption by paying your invoice without delay."},
-        {"name": "Proactive Savings", "principle": "loss aversion", "message": "Don't miss out on potential savings. Settle your invoice now to avoid extra fees."},
-        {"name": "VIP Treatment", "principle": "social proof", "message": "Join our VIP circle by paying your invoice promptly and enjoy top-tier services."},
-        {"name": "Smart Choice", "principle": "rational decision-making", "message": "Make the smart choice by settling your invoice now. It’s the best decision for your account."},
-        {"name": "Optimal Performance", "principle": "performance", "message": "Keep your account running at optimal performance. Settle your invoice promptly."},
-        {"name": "Risk-Free Option", "principle": "safety", "message": "Eliminate any risk of service interruption by paying your invoice immediately."},
-        {"name": "Special Invitation", "principle": "exclusivity", "message": "You're specially invited to take advantage of a unique offer by settling your invoice today."}
-    ]
+COMPANIES = [
+  {"name":"Acme Solutions, Inc.", "logo_url":"/static/img/acme-logo.png", "address":"123 Elm St, Metropolis, NY"},
+  {"name":"Brightside Technologies", "logo_url":"/static/img/brightside-logo.png", "address":"456 Oak Ave, Sunnyvale, CA"},
+  {"name":"Greenfield Co.", "logo_url":"/static/img/greenfield-logo.png", "address":"789 Pine Rd, Austin, TX"},
+  {"name":"Nova Financial", "logo_url":"/static/img/nova-logo.png", "address":"321 Maple Blvd, Chicago, IL"}
+]
+
+PRINCIPLES = {
+  "loss aversion": [
+    "Friendly reminder: please settle your invoice by the due date to avoid any fees.",
+    "Alert: Payment overdue. Additional charges will apply after tomorrow.",
+    "Final Notice: Your account is flagged; immediate payment required or service will be suspended."
+  ],
+  "reciprocity": [
+    "Thank you! Please pay your invoice at your convenience.",
+    "As a token of appreciation, settle today to receive 5% off your next order.",
+    "Exclusive offer: settle now for a 10% loyalty bonus on your next purchase."
+  ],
+  "social proof": [
+    "Notice: 80% of your peers have already paid their invoices.",
+    "Most clients in your area paid on time last month.",
+    "Congratulations: you’re in the top 10% earliest payers—keep it up!"
+  ],
+  "urgency": [
+    "Time is running out. Avoid interruption by paying today.",
+    "2 days left before late fees apply.",
+    "FINAL: Payment must be received within 24 hours or service terminates."
+  ]
+}
+
+
+def generate_invoices(num_rounds=12):
     invoices = []
-    for i in range(num_rounds):
-        reminder = random.choice(reminders)
-        invoice = {
-            "round": i+1,
-            "name": reminder["name"],
-            "principle": reminder["principle"],
-            "message": reminder["message"],
-            "open_time": None,
-            "response_time": None,
-            "response": None,
-            "relationship_rating": None,
-        }
-        invoices.append(invoice)
+    today = datetime.date.today()
+    companies = COMPANIES  # exactly 4
+    round_no = 1
+
+    for comp in companies:
+        principle = random.choice(list(PRINCIPLES.keys()))
+        msgs = PRINCIPLES[principle]
+        for idx, tone in enumerate(['mild','firm','final']):
+            inv_date = today - datetime.timedelta(days=random.randint(3,10))
+            due_date = inv_date + datetime.timedelta(days=random.randint(7,21))
+            amount = round(random.uniform(50,500),2)
+            invoice_id = str(uuid.uuid4())[:8]
+            invoices.append({
+                "round": round_no,
+                "company": comp["name"],
+                "logo_url": comp["logo_url"],
+                "address": comp["address"],
+                "invoice_id": invoice_id,
+                "invoice_date": inv_date.isoformat(),
+                "due_date": due_date.isoformat(),
+                "amount_due": amount,
+                "principle": principle,
+                "tone": tone,
+                "message": msgs[idx],
+                # tracking fields:
+                "open_time": None,
+                "action_choice": None,
+                "plan_details": None,
+                "question_text": None,
+                "block_rating": None,
+                "final_q1": None,
+                "final_q2": None,
+                "final_q3": None,
+                "final_comments": None
+            })
+            round_no += 1
     return invoices
