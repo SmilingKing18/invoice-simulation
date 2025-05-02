@@ -2,63 +2,43 @@
 
 // --- Global state ---
 const demographics = {};
-let allEmails = [];           // will be populated from server
-let emailQueue = [];
-let currentEmailIndex = 0;
+let currentEmail = null;
+let currentRound = null;
+let currentCompany = null;
 let ratings = {};
+const companyMap = {};
 
-// --- Helper functions ---
-
+// --- Initialization functions ---
 function setupDemoForm() {
-  const demoForm = document.getElementById('demo-form');
-  demoForm.addEventListener('submit', e => {
+  const form = document.getElementById('demo-form');
+  form.addEventListener('submit', e => {
     e.preventDefault();
     demographics.age_range = document.getElementById('age_range').value;
     demographics.gender    = document.getElementById('gender').value;
     demographics.education  = document.getElementById('education').value;
     demographics.location   = document.getElementById('location').value.trim();
     document.getElementById('demo-modal').classList.remove('active');
-    showRulesModal();
+    document.getElementById('rules-modal').classList.add('active');
   });
 }
 
-function showRulesModal() {
-  document.getElementById('rules-modal').classList.add('active');
-}
-
-function filterEmailQueue() {
-  const seen = new Set();
-  emailQueue = allEmails.filter(email => {
-    if (seen.has(email.company)) return false;
-    seen.add(email.company);
-    return true;
+function initMessageList() {
+  const items = document.querySelectorAll('#invoice-list .message-item');
+  items.forEach(item => {
+    const companyName = item.querySelector('div').textContent.trim();
+    const round = parseInt(item.id.split('-').pop());
+    if (!companyMap[companyName]) {
+      companyMap[companyName] = [];
+    }
+    companyMap[companyName].push({ round, element: item });
   });
-}
-
-function renderEmail(email) {
-  const pane = document.getElementById('invoice-details');
-  pane.innerHTML = `
-    <img src='${email.logo_url}' alt='${email.company} logo' />
-    <h3>${email.company}</h3>
-    <p>${email.address}</p>
-    <div class='email-body'>${email.message.replace(/\n/g,'<br>')}</div>
-    <div class='actions'>
-      <button onclick='onAnswerEmail("pay")'>Pay Now</button>
-      <button onclick='onAnswerEmail("delay")'>Delay Payment</button>
-      <button onclick='onAnswerEmail("contest")'>Contest Invoice</button>
-    </div>
-  `;
-}
-
-function loadNextEmail() {
-  if (currentEmailIndex >= emailQueue.length) {
-    return showEndOfGame();
-  }
-  renderEmail(emailQueue[currentEmailIndex]);
-}
-
-function onAnswerEmail(action) {
-  document.getElementById('rating-modal').classList.add('active');
+  Object.values(companyMap).forEach(arr => {
+    arr.sort((a,b) => a.round - b.round);
+    arr.forEach((o, i) => {
+      if (i > 0) o.element.style.display = 'none';
+      o.element.addEventListener('click', () => selectInvoice(o.round));
+    });
+  });
 }
 
 function setupRatingBubbles() {
@@ -82,22 +62,107 @@ function setupRatingBubbles() {
   });
 }
 
+function setupFinalSurvey() {
+  document.getElementById('final-submit').addEventListener('click', () => {
+    const q1 = document.getElementById('final_q1').value;
+    const q2 = document.getElementById('final_q2').value;
+    const q3 = document.getElementById('final_q3').value;
+    const comments = document.getElementById('final_comments').value.trim();
+    fetch('/record_final_survey', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q1, q2, q3, comments })
+    }).then(() => showThankYou())
+      .catch(err => console.error('Final survey error', err));
+  });
+}
+
+// --- Core Interaction ---
+function selectInvoice(round) {
+  fetch('/select_invoice', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ round })
+  })
+    .then(res => res.json())
+    .then(data => {
+      currentEmail = data;
+      currentRound = data.round;
+      currentCompany = data.company;
+      renderEmail(data);
+    })
+    .catch(err => console.error('Select invoice error', err));
+}
+
+function renderEmail(email) {
+  const pane = document.getElementById('invoice-details');
+  pane.innerHTML = `
+    <img src="${email.logo_url}" alt="${email.company} logo" />
+    <h3>${email.company}</h3>
+    <p>${email.address}</p>
+    <div class="email-body">${email.message.replace(/\n/g, '<br>')}</div>
+    <div class="actions">
+      <button onclick="onAnswerEmail('pay')">Pay Now</button>
+      <button onclick="onAnswerEmail('delay')">Delay Payment</button>
+      <button onclick="onAnswerEmail('contest')">Contest Invoice</button>
+    </div>
+  `;
+}
+
+function onAnswerEmail(action) {
+  fetch('/record_action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ round: currentRound, action })
+  })
+    .then(res => res.json())
+    .then(() => {
+      document.getElementById('rating-modal').classList.add('active');
+    })
+    .catch(err => console.error('Record action error', err));
+}
+
 function checkAllRated() {
-  if (Object.keys(ratings).length === document.querySelectorAll('.scale-group').length) {
+  const total = document.querySelectorAll('.scale-group').length;
+  if (Object.keys(ratings).length === total) {
     document.getElementById('submit-scales').disabled = false;
   }
 }
 
 function submitRatings() {
-  saveResponse({
-    round: emailQueue[currentEmailIndex].round,
-    ratings,
-    demographics
-  });
-  document.getElementById('rating-modal').classList.remove('active');
-  resetRatings();
-  currentEmailIndex++;
-  loadNextEmail();
+  fetch('/record_block_survey', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ round: currentRound, rating: ratings })
+  })
+    .then(res => res.json())
+    .then(() => {
+      document.getElementById('rating-modal').classList.remove('active');
+      resetRatings();
+      // hide answered
+      const answeredEl = document.getElementById(`invoice-item-${currentRound}`);
+      answeredEl.style.display = 'none';
+      // reveal next in company
+      const arr = companyMap[currentCompany];
+      const idx = arr.findIndex(o => o.round === currentRound);
+      if (idx >= 0 && idx < arr.length - 1) {
+        const nextObj = arr[idx + 1];
+        nextObj.element.style.display = '';
+        const badge = document.createElement('span');
+        badge.classList.add('badge');
+        badge.textContent = ` (Part ${idx + 2})`;
+        nextObj.element.querySelector('div').appendChild(badge);
+      }
+      // clear pane
+      document.getElementById('invoice-details').innerHTML = '';
+      // if done
+      const remaining = document.querySelectorAll('#invoice-list .message-item')
+        .length - document.querySelectorAll('#invoice-list .message-item[style*="display: none"]').length;
+      if (remaining === 0) {
+        document.getElementById('final-modal').classList.add('active');
+      }
+    })
+    .catch(err => console.error('Record rating error', err));
 }
 
 function resetRatings() {
@@ -106,64 +171,19 @@ function resetRatings() {
   document.querySelectorAll('.bubble.selected').forEach(b => b.classList.remove('selected'));
 }
 
-function setupPlanForm() {
-  document.getElementById('plan-form').addEventListener('submit', e => {
-    e.preventDefault();
-    const installments = document.getElementById('installments').value;
-    document.getElementById('plan-modal').classList.remove('active');
-  });
-}
-
-function setupQuestionForm() {
-  document.getElementById('question-form').addEventListener('submit', e => {
-    e.preventDefault();
-    const question = document.getElementById('question_text').value.trim();
-    document.getElementById('question-modal').classList.remove('active');
-  });
-}
-
-function setupFinalSurvey() {
-  document.getElementById('final-submit').addEventListener('click', () => {
-    const final_q1 = document.getElementById('final_q1').value;
-    const final_q2 = document.getElementById('final_q2').value;
-    const final_q3 = document.getElementById('final_q3').value;
-    const final_comments = document.getElementById('final_comments').value.trim();
-    document.getElementById('final-modal').classList.remove('active');
-    showThankYou();
-  });
-}
-
-function showEndOfGame() {
-  document.getElementById('final-modal').classList.add('active');
-}
-
 function showThankYou() {
-  const pane = document.getElementById('invoice-details');
-  pane.innerHTML = '<h2>Thank you for participating!</h2>';
+  document.getElementById('final-modal').classList.remove('active');
+  document.getElementById('invoice-details').innerHTML = '<h2>Thank you for participating!</h2>';
 }
 
-function saveResponse(data) {
-  console.log('Saving response', data);
-}
-
-// --- Initialization ---
+// --- DOM Ready ---
 document.addEventListener('DOMContentLoaded', () => {
   setupDemoForm();
   document.getElementById('start-game').addEventListener('click', () => {
     document.getElementById('rules-modal').classList.remove('active');
-    loadNextEmail();
   });
+  initMessageList();
   setupRatingBubbles();
   document.getElementById('submit-scales').addEventListener('click', submitRatings);
-  setupPlanForm();
-  setupQuestionForm();
   setupFinalSurvey();
-
-  fetch('/api/invoices')
-    .then(response => response.json())
-    .then(data => {
-      allEmails = data;
-      filterEmailQueue();
-    })
-    .catch(err => console.error('Error loading invoices:', err));
 });
