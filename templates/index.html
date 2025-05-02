@@ -147,15 +147,15 @@
           <div
             class="message-item"
             id="invoice-item-{{ inv.round }}"
-            data-message="{{ inv.message | e('html_attr') }}"
+            data-message="{{ inv.message | e }}"
             data-logo="{{ inv.logo_url }}"
-            data-address="{{ inv.address | e('html_attr') }}"
+            data-address="{{ inv.address | e }}"
           >
             <i class="fa fa-file-invoice"></i>
             <div>{{ inv.company }}</div>
           </div>
         {% endfor %}
-      </div>  <!-- end .message-list-content -->
+      </div>
     </div>  <!-- end .message-list -->
 
     <div class="reading-pane" id="invoice-details"></div>
