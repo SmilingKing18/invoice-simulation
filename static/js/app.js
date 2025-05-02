@@ -107,6 +107,8 @@ function renderEmail(email) {
       <button onclick="onAnswerEmail('contest')">Contest Invoice</button>
     </div>
   `;
++  // make the reading pane visible
++  pane.classList.add('active');
 }
 
 function onAnswerEmail(action) {
