@@ -150,8 +150,8 @@ def create_app():
                 inv_writer.writerow([inv.id, inv.session_id, inv.company, inv.round, inv.action_choice, inv.amount_due, inv.plan_details, inv.question_text, inv.receipt_code, inv.block_rating, inv.final_q1, inv.final_q2, inv.final_q3, inv.final_comments])
             zipf.writestr('invoices.csv', inv_buf.getvalue())
         zip_buf.seek(0)
-        return send_file(zip_buf, mimetype='application/zip', attachment_filename='all_data.zip').encode()),
-                         mimetype='text/csv', attachment_filename='invoices.csv')
+        return send_file(zip_buf, mimetype='application/zip', attachment_filename='all_data.zip')
+
     return app
 
 if __name__=='__main__':
