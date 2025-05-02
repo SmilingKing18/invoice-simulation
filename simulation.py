@@ -1,7 +1,6 @@
 import random
 import datetime
 import uuid
-import random, datetime, uuid
 
 COMPANIES = [
     {"name":"Acme Solutions, Inc.",    "logo_url":"/static/img/acme-logo.png",    "address":"123 Elm St, Metropolis, NY"},
@@ -187,7 +186,6 @@ def generate_invoices(num_rounds=12):
                 "invoice_date": inv_date.isoformat(),
                 "due_date": due_date.isoformat(),
                 "amount_due": amount,
-                "coupon": "SAVE5" if random.random()>0.3 else None,
                 "principle": principle,
                 "tone": tone,
                 "message": full_msg,
