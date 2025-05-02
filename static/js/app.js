@@ -1,90 +1,124 @@
-// UI helpers
-const totalInvoices = 12;
-function showModal(id){document.getElementById(id).classList.add('active');}
-function hideModal(id){document.getElementById(id).classList.remove('active');}
+// --- Global state ---
+const demographics = {};
+let allEmails = [];           // populate from server
+let emailQueue = [];
+let currentEmailIndex = 0;
+let ratings = {};
 
-// Demographics
-document.getElementById('demo-form').addEventListener('submit',e=>{
-  e.preventDefault();
-  const data={ age_range:age_range.value, gender:gender.value, education:education.value };
-  fetch('/record_demographics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
-    .then(r=>r.json()).catch(console.error).then(()=>hideModal('demo-modal'));
+// --- On DOM ready ---
+document.addEventListener('DOMContentLoaded', () => {
+  setupDemoForm();
+  filterEmailQueue();
+  // ... any other init you had …
 });
 
-let currentInvoice=0;
-function selectInvoice(round){ currentInvoice=round;
-  fetch('/select_invoice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({round})})
-    .then(r=>r.json()).catch(console.error).then(data=>{
-      // render invoice
-      const pane=document.getElementById('invoice-details'); pane.classList.add('active');
-      pane.innerHTML = `
-        <div class='budget-bar'>Budget: $${data.budget.toFixed(2)} | Points: ${data.points}</div>
-        <div class='invoice-card'>
-          <img src='${data.logo_url}' class='invoice-logo'/>
-          <h3>${data.company}</h3>
-          <p>${data.address}</p>
-          <table class='invoice-details'>
-            <tr><th>Invoice #</th><td>${data.invoice_id}</td></tr>
-            <tr><th>Date</th><td>${data.invoice_date}</td></tr>
-            <tr><th>Due</th><td>${data.due_date}</td></tr>
-            <tr><th>Amount</th><td>$${data.amount_due.toFixed(2)}</td></tr>
-          </table>
-          <p><strong>${data.message}</strong></p>
-          <div class='reading-pane-actions'>
-            <button onclick="action('pay')">Pay Now</button>
-            <button onclick="action('plan')">Request Plan</button>
-            <button onclick="action('ask')">Ask Question</button>
-            <button onclick="action('archive')">Archive</button>
-          </div>
-        </div>`;
+// Demographics form
+function setupDemoForm() {
+  document.getElementById('demo-form').addEventListener('submit', e => {
+    e.preventDefault();
+    demographics.age_range = document.getElementById('age_range').value;
+    demographics.gender    = document.getElementById('gender').value;
+    demographics.education  = document.getElementById('education').value;
+    demographics.location   = document.getElementById('location').value.trim();
+
+    document.getElementById('demo-modal').classList.remove('active');
+    showRulesModal();
   });
 }
 
-function action(type){
-  if(type==='plan'){ showModal('plan-modal'); return; }
-  if(type==='ask'){ showModal('question-modal'); return; }
-  sendAction(type,null);
+// Rules modal
+function showRulesModal() {
+  document.getElementById('rules-modal').classList.add('active');
 }
+document.getElementById('start-game').addEventListener('click', () => {
+  document.getElementById('rules-modal').classList.remove('active');
+  loadNextEmail();
+});
 
-function sendAction(type,detail){
-  fetch('/record_action',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({round:currentInvoice, action:type, plan:detail, question:detail})
-  }).then(r=>r.json()).catch(console.error).then(data=>{
-    // update budget display
-    // proceed to next or block modal
-    if(currentInvoice %3===0 && currentInvoice<totalInvoices) showModal('block-modal');
-    else if(currentInvoice===totalInvoices) showModal('final-modal');
-    else {document.getElementById(`invoice-item-${currentInvoice}`).remove();}
+// Filter one per company
+function filterEmailQueue() {
+  const seen = new Set();
+  emailQueue = allEmails.filter(email => {
+    if (seen.has(email.company)) return false;
+    seen.add(email.company);
+    return true;
   });
 }
 
-// Plan modal
-document.getElementById('plan-form').addEventListener('submit',e=>{
-  e.preventDefault();
-  const detail = installments.value + ' installments';
-  hideModal('plan-modal'); sendAction('plan',detail);
+// Load & render next
+function loadNextEmail() {
+  if (currentEmailIndex >= emailQueue.length) {
+    return showEndOfGame();
+  }
+  renderEmail(emailQueue[currentEmailIndex]);
+}
+
+// When user answers (pay/delay/contest)
+function onAnswerEmail(action) {
+  // record action…
+  // then show rating modal:
+  document.getElementById('rating-modal').classList.add('active');
+}
+
+// Rating bubbles setup
+const groups = document.querySelectorAll('.scale-group');
+groups.forEach(group => {
+  const q = group.dataset.question;
+  const container = group.querySelector('.scale');
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement('div');
+    b.classList.add('bubble');
+    b.textContent = i;
+    b.dataset.value = i;
+    container.appendChild(b);
+    b.addEventListener('click', () => {
+      container.querySelectorAll('.bubble').forEach(x => x.classList.remove('selected'));
+      b.classList.add('selected');
+      ratings[q] = i;
+      checkAllRated();
+    });
+  }
 });
 
-// Question modal
-document.getElementById('question-form').addEventListener('submit',e=>{
-  e.preventDefault();
-  const detail = question_text.value;
-  hideModal('question-modal'); sendAction('ask',detail);
+function checkAllRated() {
+  if (Object.keys(ratings).length === groups.length) {
+    document.getElementById('submit-scales').disabled = false;
+  }
+}
+
+document.getElementById('submit-scales').addEventListener('click', () => {
+  saveResponse({
+    emailId: emailQueue[currentEmailIndex].id,
+    ratings,
+    demographics
+  });
+  // reset
+  groups.forEach(g => g.querySelectorAll('.bubble').forEach(b => b.classList.remove('selected')));
+  document.getElementById('submit-scales').disabled = true;
+  ratings = {};
+  currentEmailIndex++;
+  document.getElementById('rating-modal').classList.remove('active');
+  loadNextEmail();
 });
 
-// Block survey
-document.getElementById('block-submit').addEventListener('click',()=>{
-  const rating=parseInt(block_rating.value);
-  fetch('/record_block_survey',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({round:currentInvoice, rating})
-  }).then(_=>{ hideModal('block-modal'); document.getElementById(`invoice-item-${currentInvoice}`).remove(); });
-});
+// Utility: enrich each email with fullBody
+function enrichEmails() {
+  emailQueue.forEach(email => {
+    email.fullBody = `
+Dear ${email.recipientName || 'Customer'},
 
-// Final survey
-document.getElementById('final-submit').addEventListener('click',()=>{
-  const data={ q1:parseInt(final_q1.value), q2:final_q2.value, q3:final_q3.value, comments:final_comments.value };
-  fetch('/record_final_survey',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
-    .then(_=>{ hideModal('final-modal'); document.body.innerHTML='<h2>Thank you!</h2>' });
-});
+Please find attached invoice #${email.invoiceNumber} for €${email.amount.toFixed(2)},
+due on ${new Date(email.dueDate).toLocaleDateString('en-GB', {
+  day: 'numeric', month: 'long', year: 'numeric'
+})}.
 
-function refreshInvoices(){fetch('/refresh_invoices',{method:'POST'}).then(_=>location.reload()).catch(console.error);} 
+You are currently in the top 10% of our earliest payers—thank you for your promptness!
+Timely payments help us keep serving you better. Let us know if you have any questions.
+
+Best regards,
+The Billing Team
+    `;
+  });
+}
+
+// Call enrichEmails() after filterEmailQueue()
