@@ -132,24 +132,34 @@
   </div>
 
   <!-- Top Nav & Message List -->
-  <div class="top-nav"><div class="logo">Invoice Simulator</div>
-    <div class="nav-items"><div class="nav-item" onclick="refreshInvoices()">Refresh</div></div></div>
+  <div class="top-nav">
+    <div class="logo">Invoice Simulator</div>
+    <div class="nav-items"><div class="nav-item" onclick="refreshInvoices()">Refresh</div></div>
+  </div>
+
   <div class="main-container">
     <div class="message-list">
-      <div class="message-list-header"><button class="tab-button active">Invoices</button></div>
-      <div class="message-item"
-          id="invoice-item-{{ inv.round }}"
-          data-message="{{ inv.message | e }}"
-          data-logo="{{ inv.logo_url }}"
-          data-address="{{ inv.address | e }}"
-    >
-      <i class="fa fa-file-invoice"></i>
-      <div>{{ inv.company }}</div>
-    </div>
-        {% endfor %}
+      <div class="message-list-header">
+        <button class="tab-button active">Invoices</button>
       </div>
+      <div class="message-list-content" id="invoice-list">
+        {% for inv in invoices %}
+          <div
+            class="message-item"
+            id="invoice-item-{{ inv.round }}"
+            data-message="{{ inv.message | e('html_attr') }}"
+            data-logo="{{ inv.logo_url }}"
+            data-address="{{ inv.address | e('html_attr') }}"
+          >
+            <i class="fa fa-file-invoice"></i>
+            <div>{{ inv.company }}</div>
+          </div>
+        {% endfor %}
+      </div>  <!-- end .message-list-content -->
+    </div>  <!-- end .message-list -->
+
     <div class="reading-pane" id="invoice-details"></div>
-  </div>
+  </div>  <!-- end .main-container -->
 
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
