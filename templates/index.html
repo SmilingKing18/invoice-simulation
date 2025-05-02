@@ -158,7 +158,13 @@
       </div>
     </div>  <!-- end .message-list -->
 
-    <div class="reading-pane" id="invoice-details"></div>
+    <div class="reading-pane" id="invoice-details">
+      <div class="budget-bar">
+        Balance: $<span id="budget-amt">{{ budget }}</span>
+        &nbsp;|&nbsp;
+        Points: <span id="points-amt">{{ points }}</span>
+      </div>
+    </div>
   </div>  <!-- end .main-container -->
 
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>

@@ -73,22 +73,36 @@ def select_invoice():
 
 @app.route('/record_action', methods=['POST'])
 def record_action():
-    data = request.json; sid = request.cookies.get('session_id')
-    db = SessionLocal()
-    inv = db.query(Invoice).filter_by(session_id=sid, round=data['round']).one()
+    data = request.json
+    sid  = request.cookies.get('session_id')
+    db   = SessionLocal()
+    inv  = db.query(Invoice).filter_by(session_id=sid, round=data['round']).one()
     sess = db.get(SessionModel, sid)
+
     action = data['action']
     inv.action_choice = action
-    if action=='pay':
+
+    # PAY NOW
+    if action == 'pay':
         sess.budget -= inv.amount_due
-        sess.points += 10 if inv.tone=='mild' else 5 if inv.tone=='firm' else 2
-    elif action=='archive':
+        # award points based on tone
+        sess.points += { 'mild':10, 'firm':5, 'final':2 }[inv.tone]
+        inv.receipt_code = str(uuid.uuid4())[:8]
+    # ARCHIVE → penalty 5% on next round
+    elif action == 'archive':
         penalty = inv.amount_due * 0.05
         sess.budget -= penalty
-    inv.plan_details = data.get('plan',None)
-    inv.question_text = data.get('question',None)
+    # REQUEST PLAN → no immediate cost; details come from data['plan']
+    elif action == 'plan':
+        inv.plan_details = data.get('plan')
+        # ongoing plan cost: cost 1 point per future installment
+        sess.points -= int(inv.plan_details[0])
+    # ASK QUESTION → lock company: if they never pay by 3rd, handle later
+    elif action == 'ask':
+        inv.question_text = data.get('question')
+
     db.commit()
-    return jsonify({'budget':sess.budget,'points':sess.points})
+    return jsonify({'budget':sess.budget,'points':sess.points,'receipt':inv.receipt_code})
 
 @app.route('/record_block_survey', methods=['POST'])
 def record_block_survey():

@@ -41,6 +41,7 @@ class Invoice(Base):
     open_time = Column(Float, nullable=True)
     action_choice = Column(String, nullable=True)
     plan_details = Column(String, nullable=True)
+    receipt_code = Column(String, nullable=True)
     question_text = Column(Text, nullable=True)
     block_rating = Column(Integer, nullable=True)
     final_q1 = Column(Integer, nullable=True)

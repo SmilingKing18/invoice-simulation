@@ -23,5 +23,15 @@
 .invoice-details{width:100%;margin:10px 0;border-collapse:collapse}
 .invoice-details th, .invoice-details td{padding:6px;text-align:left}
 .budget-bar, .points-bar{margin:10px 0;padding:8px;background:#0078d4;color:#fff;border-radius:4px;text-align:center}
+.budget-bar { background:#0078d4; color:#fff; padding:8px; text-align:center; }
+.coupon { margin:10px 0; padding:6px; background:#FFF3CD; border:1px solid #FFEEBA; border-radius:4px; }
+.bubble {
+  width:32px; height:32px; border:2px solid #0078d4; border-radius:50%;
+  background:transparent; color:#0078d4; font-weight:bold; margin:0 4px; cursor:pointer;
+  transition:background .2s, color .2s;
+}
+.bubble.selected { background:#28A745; color:#fff; }
+button { transition:all .2s; }
+
 @media(max-width:600px){.sidebar{display:none}.message-list{width:100%}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
