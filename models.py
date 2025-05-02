@@ -1,51 +1,46 @@
-from sqlalchemy import Column, String, Integer, Float, DateTime, Text, ForeignKey
-from sqlalchemy.orm import declarative_base, relationship
+from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import uuid
 
-Base = declarative_base()
+db = SQLAlchemy()
 
-class Session(Base):
-    __tablename__ = 'sessions'
-    session_id = Column(String, primary_key=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    budget = Column(Float, default=1000.0)
-    points = Column(Integer, default=0)
-    demographics = relationship('Demographics', back_populates='session', uselist=False)
-    invoices = relationship('Invoice', back_populates='session')
+class Session(db.Model):
+    session_id = db.Column(db.String, primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    budget = db.Column(db.Float, default=1000.0)
+    points = db.Column(db.Integer, default=0)
+    demographics = db.relationship('Demographics', backref='session', uselist=False)
+    invoices = db.relationship('Invoice', backref='session', lazy=True)
 
-class Demographics(Base):
-    __tablename__ = 'demographics'
-    id = Column(Integer, primary_key=True)
-    session_id = Column(String, ForeignKey('sessions.session_id'), unique=True)
-    age_range = Column(String)
-    gender = Column(String)
-    education = Column(String)
-    submitted_at = Column(DateTime, default=datetime.utcnow)
-    session = relationship('Session', back_populates='demographics')
+class Demographics(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String, db.ForeignKey('session.session_id'), nullable=False)
+    age_range = db.Column(db.String)
+    gender = db.Column(db.String)
+    education = db.Column(db.String)
+    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-class Invoice(Base):
-    __tablename__ = 'invoices'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(String, ForeignKey('sessions.session_id'))
-    round = Column(Integer)
-    company = Column(String)
-    logo_url = Column(String)
-    address = Column(String)
-    invoice_id = Column(String)
-    invoice_date = Column(String)
-    due_date = Column(String)
-    amount_due = Column(Float)
-    principle = Column(String)
-    tone = Column(String)
-    message = Column(Text)
-    open_time = Column(Float, nullable=True)
-    action_choice = Column(String, nullable=True)
-    plan_details = Column(String, nullable=True)
-    receipt_code = Column(String, nullable=True)
-    question_text = Column(Text, nullable=True)
-    block_rating = Column(Integer, nullable=True)
-    final_q1 = Column(Integer, nullable=True)
-    final_q2 = Column(String, nullable=True)
-    final_q3 = Column(String, nullable=True)
-    final_comments = Column(Text, nullable=True)
-    session = relationship('Session', back_populates='invoices')
+class Invoice(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String, db.ForeignKey('session.session_id'), nullable=False)
+    round = db.Column(db.Integer)
+    company = db.Column(db.String)
+    logo_url = db.Column(db.String)
+    address = db.Column(db.String)
+    invoice_id = db.Column(db.String, default=lambda: uuid.uuid4().hex[:8])
+    invoice_date = db.Column(db.String)
+    due_date = db.Column(db.String)
+    principle = db.Column(db.String)
+    tone = db.Column(db.String)
+    message = db.Column(db.Text)
+    coupon = db.Column(db.String, nullable=True)
+    amount_due = db.Column(db.Float)
+    action_choice = db.Column(db.String, nullable=True)
+    plan_details = db.Column(db.String, nullable=True)
+    question_text = db.Column(db.Text, nullable=True)
+    receipt_code = db.Column(db.String, nullable=True)
+    block_rating = db.Column(db.Integer, nullable=True)
+    final_q1 = db.Column(db.Integer, nullable=True)
+    final_q2 = db.Column(db.String, nullable=True)
+    final_q3 = db.Column(db.String, nullable=True)
+    final_comments = db.Column(db.Text, nullable=True)

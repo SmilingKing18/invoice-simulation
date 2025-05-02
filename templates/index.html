@@ -1,172 +1,127 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Invoice Simulator</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Behavioral Invoice Simulator</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script defer src="/static/js/main.js"></script>
+  <script src="https://kit.fontawesome.com/yourkit.js"></script>
 </head>
 <body>
-
-  
-  <!-- Demographics Modal -->
-  <div id="demo-modal" class="modal active">
-    <div class="modal-content">
-      <h2>Tell us about yourself</h2>
-      <form id="demo-form">
-        <label>Age Range:
-          <select id="age_range" required>
-            <option value="Under 18">Under 18</option>
-            <option value="18-24">18-24</option>
-            <option value="25-34">25-34</option>
-            <option value="35-44">35-44</option>
-            <option value="45-54">45-54</option>
-            <option value="55-64">55-64</option>
-            <option value="65+">65+</option>
-          </select>
-        </label>
-        <label>Gender:
-          <select id="gender" required>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-            <option value="Prefer not to say">Prefer not to say</option>
-          </select>
-        </label>
-        <label>Education:
-          <select id="education" required>
-            <option value="High School">High School</option>
-            <option value="Bachelor's">Bachelor's</option>
-            <option value="Master's">Master's</option>
-            <option value="Doctorate">Doctorate</option>
-            <option value="Other">Other</option>
-          </select>
-        </label>
-        <label>Where are you from:
-          <input id="location" type="text" placeholder="City, Country" required>
-        </label>
-        <button type="submit">Start Experiment</button>
-      </form>
+  <nav>
+    <h1>Invoice Simulator</h1>
+    <button id="refresh">Refresh</button>
+  </nav>
+  <aside id="sidebar">
+    <ul id="message-list">
+      {% for inv in invoices %}
+      <li data-round="{{inv.round}}">{{inv.company}} <i class="fa fa-envelope-{{inv.tone}}"></i></li>
+      {% endfor %}
+    </ul>
+  </aside>
+  <section id="reading-pane">
+    <!-- Invoice Card -->
+    <div id="invoice-card" class="card hidden">
+      <div class="card-header">
+        <img id="card-logo" src="" alt="Company Logo" class="logo">
+        <div>
+          <h2 id="card-company"></h2>
+          <p id="card-address"></p>
+        </div>
+      </div>
+      <div class="card-body">
+        <p><strong>Invoice #: </strong><span id="card-invoice-id"></span></p>
+        <p><strong>Invoice Date: </strong><span id="card-invoice-date"></span></p>
+        <p><strong>Due Date: </strong><span id="card-due-date"></span></p>
+        <p id="card-message"></p>
+        <div id="card-coupon" class="coupon hidden">Use code <strong><span id="card-coupon-code"></span></strong> for savings!</div>
+        <p class="amount-due"><strong>Amount Due: $<span id="card-amount"></span></strong></p>
+      </div>
+      <div class="card-actions">
+        <button id="action-pay" class="btn"><i class="fas fa-dollar-sign"></i> Pay Now (<span id="action-pay-cost"></span>, +<span id="action-pay-points"></span> pts)</button>
+        <button id="action-plan" class="btn"><i class="fas fa-calendar-alt"></i> Request Plan</button>
+        <button id="action-ask" class="btn"><i class="fas fa-question-circle"></i> Ask Question</button>
+        <button id="action-archive" class="btn"><i class="fas fa-archive"></i> Archive (-5% penalty)</button>
+      </div>
     </div>
+
+    <!-- Budget & Points Bar -->
+    <div id="status-bar">
+      <p>Budget: $<span id="status-budget">0</span> | Points: <span id="status-points">0</span></p>
+    </div>
+  </section>
+
+  <!-- Modals -->
+  <!-- Demographics Modal -->
+  <div id="modal-demographics" class="modal">
+    <form id="form-demographics" class="modal-content">
+      <h3>Tell us about yourself</h3>
+      <label>Age Range:<select name="age_range"><option>18-24</option><option>25-34</option><!-- etc --></select></label>
+      <label>Gender:<select name="gender"><option>Male</option><option>Female</option><!-- etc --></select></label>
+      <label>Education:<select name="education"><option>High School</option><option>Bachelor's</option><!-- etc --></select></label>
+      <button type="submit">Submit</button>
+    </form>
   </div>
 
   <!-- Rules Modal -->
-  <div id="rules-modal" class="modal">
+  <div id="modal-rules" class="modal">
     <div class="modal-content">
-      <h2>How to Play</h2>
-      <p>• You’ll receive one email at a time—only one per company.</p>
-      <p>• Click the buttons to choose whether to pay now, delay, or contest.</p>
-      <p>• Each choice affects your “money” balance shown at top right.</p>
-      <p>• After each email, you’ll rate it on urgency, arousal, persuasion, and trust.</p>
-      <button id="start-game">Let’s Go!</button>
+      <h3>How It Works</h3>
+      <p>You have a budget and earn points based on how quickly you pay invoices...</p>
+      <button id="rules-close">Got it</button>
     </div>
   </div>
 
   <!-- Plan Modal -->
-  <div id="plan-modal" class="modal">
-    <div class="modal-content">
-      <h2>Choose Installments</h2>
-      <form id="plan-form">
-        <select id="installments">
-          <option value="2">2 payments</option>
-          <option value="3">3 payments</option>
-        </select>
-        <button type="submit">Submit Plan</button>
-      </form>
-    </div>
+  <div id="modal-plan" class="modal">
+    <form id="form-plan" class="modal-content">
+      <h3>Select Installments</h3>
+      <label><input type="radio" name="plan" value="2 installments"> 2 installments</label>
+      <label><input type="radio" name="plan" value="3 installments"> 3 installments</label>
+      <button type="submit">Confirm</button>
+    </form>
   </div>
-
-
 
   <!-- Question Modal -->
-  <div id="question-modal" class="modal">
-    <div class="modal-content">
-      <h2>Ask a Question</h2>
-      <form id="question-form">
-        <textarea id="question_text" rows="3" style="width:100%;"></textarea>
-        <button type="submit">Send</button>
-      </form>
-    </div>
+  <div id="modal-question" class="modal">
+    <form id="form-question" class="modal-content">
+      <h3>Ask a Question</h3>
+      <textarea name="question" rows="4" placeholder="Type your question..."></textarea>
+      <button type="submit">Send</button>
+    </form>
   </div>
 
-  <!-- Rating Modal -->
-  <div id="rating-modal" class="modal">
+  <!-- Block Survey Modal -->
+  <div id="modal-block-survey" class="modal">
+    <form id="form-block-survey" class="modal-content">
+      <h3>Rate the Emails</h3>
+      <div class="scale" data-scale="urgency"><span>Urgency:</span><!-- bubbles --></div>
+      <div class="scale" data-scale="arousal"><span>Arousal:</span></div>
+      <div class="scale" data-scale="persuasion"><span>Persuasion:</span></div>
+      <div class="scale" data-scale="trust"><span>Trust:</span></div>
+      <button type="submit">Submit Ratings</button>
+    </form>
+  </div>
+
+  <!-- Receipt Modal -->
+  <div id="modal-receipt" class="modal">
     <div class="modal-content">
-      <h2>Quick Feedback</h2>
-      <div class="scale-group" data-question="urgency">
-        <p>Perceived Urgency:</p>
-        <div class="scale"></div>
-      </div>
-      <div class="scale-group" data-question="arousal">
-        <p>Emotional Arousal:</p>
-        <div class="scale"></div>
-      </div>
-      <div class="scale-group" data-question="persuasion">
-        <p>Persuasiveness:</p>
-        <div class="scale"></div>
-      </div>
-      <div class="scale-group" data-question="trust">
-        <p>Trust in Sender:</p>
-        <div class="scale"></div>
-      </div>
-      <button id="submit-scales" disabled>Submit Feedback</button>
+      <h3>Receipt</h3>
+      <p>Payment successful! Your receipt code is <strong id="receipt-code"></strong>.</p>
+      <button id="receipt-close">Close</button>
     </div>
   </div>
 
   <!-- Final Survey Modal -->
-  <div id="final-modal" class="modal">
-    <div class="modal-content">
-      <h2>Final Questions</h2>
-      <label>Would CEO vs Assistant change urgency?<select id="final_q1"><option value="">Choose</option>
-        <option value="1">1 – Not at all</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5 – Extremely</option></select></label>
-      <label>Authority effect:<select id="final_q2"><option>More urgent</option><option>Less urgent</option><option>No difference</option></select></label>
-      <label>Most persuasive tone:<select id="final_q3"><option>mild</option><option>firm</option><option>final</option></select></label>
-      <textarea id="final_comments" rows="3" style="width:100%;" placeholder="Comments..."></textarea>
-      <button id="final-submit">Finish</button>
-    </div>
+  <div id="modal-final-survey" class="modal">
+    <form id="form-final-survey" class="modal-content">
+      <h3>Final Survey</h3>
+      <label>Q1 (urgency):<select name="q1"><option>1</option><!--...--></select></label>
+      <label>Q2 (who felt more urgent?):<input name="q2" type="text"></label>
+      <label>Q3 (most persuasive tone):<input name="q3" type="text"></label>
+      <label>Comments:<textarea name="comments"></textarea></label>
+      <button type="submit">Submit</button>
+    </form>
   </div>
-
-  <!-- Top Nav & Message List -->
-  <div class="top-nav">
-    <div class="logo">Invoice Simulator</div>
-    <div class="nav-items"><div class="nav-item" onclick="refreshInvoices()">Refresh</div></div>
-  </div>
-
-  <div class="main-container">
-    <div class="message-list">
-      <div class="message-list-header">
-        <button class="tab-button active">Invoices</button>
-      </div>
-      <div class="message-list-content" id="invoice-list">
-        {% for inv in invoices %}
-          <div
-            class="message-item"
-            id="invoice-item-{{ inv.round }}"
-            data-message="{{ inv.message | e }}"
-            data-logo="{{ inv.logo_url }}"
-            data-address="{{ inv.address | e }}"
-          >
-            <i class="fa fa-file-invoice"></i>
-            <div>{{ inv.company }}</div>
-          </div>
-        {% endfor %}
-      </div>
-    </div>  <!-- end .message-list -->
-
-    <div class="reading-pane" id="invoice-details">
-      <div class="budget-bar">
-        Balance: $<span id="budget-amt">{{ budget }}</span>
-        &nbsp;|&nbsp;
-        Points: <span id="points-amt">{{ points }}</span>
-      </div>
-    </div>
-  </div>  <!-- end .main-container -->
-
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
