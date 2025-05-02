@@ -1,6 +1,5 @@
 import os
 from flask import Flask, request, jsonify, render_template, make_response, send_file
-from flask_migrate import Migrate
 from models import db, Session, Demographics, Invoice
 from simulation import generate_invoices
 import csv
@@ -13,7 +12,6 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.secret_key = os.getenv('SECRET_KEY')
     db.init_app(app)
-    Migrate(app, db)
 
     @app.before_request
     def ensure_session():
