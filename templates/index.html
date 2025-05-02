@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
-  <title>Audit Simulation</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Invoice Simulator</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
   <!-- Demographics Modal -->
@@ -59,10 +61,30 @@
     </div>
   </div>
 
-  <!-- Plan Modal (unchanged) -->
+  <!-- Plan Modal -->
   <div id="plan-modal" class="modal">
     <div class="modal-content">
-      <!-- … your existing plan content … -->
+      <h2>Choose Installments</h2>
+      <form id="plan-form">
+        <select id="installments">
+          <option value="2">2 payments</option>
+          <option value="3">3 payments</option>
+        </select>
+        <button type="submit">Submit Plan</button>
+      </form>
+    </div>
+  </div>
+
+
+
+  <!-- Question Modal -->
+  <div id="question-modal" class="modal">
+    <div class="modal-content">
+      <h2>Ask a Question</h2>
+      <form id="question-form">
+        <textarea id="question_text" rows="3" style="width:100%;"></textarea>
+        <button type="submit">Send</button>
+      </form>
     </div>
   </div>
 
@@ -90,16 +112,40 @@
     </div>
   </div>
 
-  <!-- Your existing invoice list & reading pane… -->
-  <div class="message-list-content" id="invoice-list">
-    {% for inv in invoices %}
-      <div class="message-item" id="invoice-item-{{inv.round}}" onclick="selectInvoice({{inv.round}})">
-        <i class="fa fa-file-invoice"></i>
-        <div>{{inv.company}}</div>
-      </div>
-    {% endfor %}
+  <!-- Final Survey Modal -->
+  <div id="final-modal" class="modal">
+    <div class="modal-content">
+      <h2>Final Questions</h2>
+      <label>Would CEO vs Assistant change urgency?<select id="final_q1"><option value="">Choose</option>
+        <option value="1">1 – Not at all</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5 – Extremely</option></select></label>
+      <label>Authority effect:<select id="final_q2"><option>More urgent</option><option>Less urgent</option><option>No difference</option></select></label>
+      <label>Most persuasive tone:<select id="final_q3"><option>mild</option><option>firm</option><option>final</option></select></label>
+      <textarea id="final_comments" rows="3" style="width:100%;" placeholder="Comments..."></textarea>
+      <button id="final-submit">Finish</button>
+    </div>
   </div>
-  <div class="reading-pane" id="invoice-details"></div>
+
+  <!-- Top Nav & Message List -->
+  <div class="top-nav"><div class="logo">Invoice Simulator</div>
+    <div class="nav-items"><div class="nav-item" onclick="refreshInvoices()">Refresh</div></div></div>
+  <div class="main-container">
+    <div class="message-list">
+      <div class="message-list-header"><button class="tab-button active">Invoices</button></div>
+      <div class="message-list-content" id="invoice-list">
+        {% for inv in invoices %}
+          <div class="message-item" id="invoice-item-{{inv.round}}" onclick="selectInvoice({{inv.round}})">
+            <i class="fa fa-file-invoice"></i>
+            <div>{{inv.company}}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="reading-pane" id="invoice-details"></div>
+  </div>
 
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>

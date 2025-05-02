@@ -1,41 +1,31 @@
+// static/js/app.js
+
 // --- Global state ---
 const demographics = {};
-let allEmails = [];           // populate from server
+let allEmails = [];           // will be populated from server
 let emailQueue = [];
 let currentEmailIndex = 0;
 let ratings = {};
 
-// --- On DOM ready ---
-document.addEventListener('DOMContentLoaded', () => {
-  setupDemoForm();
-  filterEmailQueue();
-  // ... any other init you had …
-});
+// --- Helper functions ---
 
-// Demographics form
 function setupDemoForm() {
-  document.getElementById('demo-form').addEventListener('submit', e => {
+  const demoForm = document.getElementById('demo-form');
+  demoForm.addEventListener('submit', e => {
     e.preventDefault();
     demographics.age_range = document.getElementById('age_range').value;
     demographics.gender    = document.getElementById('gender').value;
     demographics.education  = document.getElementById('education').value;
     demographics.location   = document.getElementById('location').value.trim();
-
     document.getElementById('demo-modal').classList.remove('active');
     showRulesModal();
   });
 }
 
-// Rules modal
 function showRulesModal() {
   document.getElementById('rules-modal').classList.add('active');
 }
-document.getElementById('start-game').addEventListener('click', () => {
-  document.getElementById('rules-modal').classList.remove('active');
-  loadNextEmail();
-});
 
-// Filter one per company
 function filterEmailQueue() {
   const seen = new Set();
   emailQueue = allEmails.filter(email => {
@@ -45,7 +35,21 @@ function filterEmailQueue() {
   });
 }
 
-// Load & render next
+function renderEmail(email) {
+  const pane = document.getElementById('invoice-details');
+  pane.innerHTML = `
+    <img src='${email.logo_url}' alt='${email.company} logo' />
+    <h3>${email.company}</h3>
+    <p>${email.address}</p>
+    <div class='email-body'>${email.message.replace(/\n/g,'<br>')}</div>
+    <div class='actions'>
+      <button onclick='onAnswerEmail("pay")'>Pay Now</button>
+      <button onclick='onAnswerEmail("delay")'>Delay Payment</button>
+      <button onclick='onAnswerEmail("contest")'>Contest Invoice</button>
+    </div>
+  `;
+}
+
 function loadNextEmail() {
   if (currentEmailIndex >= emailQueue.length) {
     return showEndOfGame();
@@ -53,72 +57,113 @@ function loadNextEmail() {
   renderEmail(emailQueue[currentEmailIndex]);
 }
 
-// When user answers (pay/delay/contest)
 function onAnswerEmail(action) {
-  // record action…
-  // then show rating modal:
   document.getElementById('rating-modal').classList.add('active');
 }
 
-// Rating bubbles setup
-const groups = document.querySelectorAll('.scale-group');
-groups.forEach(group => {
-  const q = group.dataset.question;
-  const container = group.querySelector('.scale');
-  for (let i = 1; i <= 5; i++) {
-    const b = document.createElement('div');
-    b.classList.add('bubble');
-    b.textContent = i;
-    b.dataset.value = i;
-    container.appendChild(b);
-    b.addEventListener('click', () => {
-      container.querySelectorAll('.bubble').forEach(x => x.classList.remove('selected'));
-      b.classList.add('selected');
-      ratings[q] = i;
-      checkAllRated();
-    });
-  }
-});
+function setupRatingBubbles() {
+  const groups = document.querySelectorAll('.scale-group');
+  groups.forEach(group => {
+    const q = group.dataset.question;
+    const container = group.querySelector('.scale');
+    for (let i = 1; i <= 5; i++) {
+      const bubble = document.createElement('div');
+      bubble.classList.add('bubble');
+      bubble.textContent = i;
+      bubble.dataset.value = i;
+      container.appendChild(bubble);
+      bubble.addEventListener('click', () => {
+        container.querySelectorAll('.bubble').forEach(b => b.classList.remove('selected'));
+        bubble.classList.add('selected');
+        ratings[q] = i;
+        checkAllRated();
+      });
+    }
+  });
+}
 
 function checkAllRated() {
-  if (Object.keys(ratings).length === groups.length) {
+  if (Object.keys(ratings).length === document.querySelectorAll('.scale-group').length) {
     document.getElementById('submit-scales').disabled = false;
   }
 }
 
-document.getElementById('submit-scales').addEventListener('click', () => {
+function submitRatings() {
   saveResponse({
-    emailId: emailQueue[currentEmailIndex].id,
+    round: emailQueue[currentEmailIndex].round,
     ratings,
     demographics
   });
-  // reset
-  groups.forEach(g => g.querySelectorAll('.bubble').forEach(b => b.classList.remove('selected')));
-  document.getElementById('submit-scales').disabled = true;
-  ratings = {};
-  currentEmailIndex++;
   document.getElementById('rating-modal').classList.remove('active');
+  resetRatings();
+  currentEmailIndex++;
   loadNextEmail();
-});
+}
 
-// Utility: enrich each email with fullBody
-function enrichEmails() {
-  emailQueue.forEach(email => {
-    email.fullBody = `
-Dear ${email.recipientName || 'Customer'},
+function resetRatings() {
+  ratings = {};
+  document.getElementById('submit-scales').disabled = true;
+  document.querySelectorAll('.bubble.selected').forEach(b => b.classList.remove('selected'));
+}
 
-Please find attached invoice #${email.invoiceNumber} for €${email.amount.toFixed(2)},
-due on ${new Date(email.dueDate).toLocaleDateString('en-GB', {
-  day: 'numeric', month: 'long', year: 'numeric'
-})}.
-
-You are currently in the top 10% of our earliest payers—thank you for your promptness!
-Timely payments help us keep serving you better. Let us know if you have any questions.
-
-Best regards,
-The Billing Team
-    `;
+function setupPlanForm() {
+  document.getElementById('plan-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const installments = document.getElementById('installments').value;
+    document.getElementById('plan-modal').classList.remove('active');
   });
 }
 
-// Call enrichEmails() after filterEmailQueue()
+function setupQuestionForm() {
+  document.getElementById('question-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const question = document.getElementById('question_text').value.trim();
+    document.getElementById('question-modal').classList.remove('active');
+  });
+}
+
+function setupFinalSurvey() {
+  document.getElementById('final-submit').addEventListener('click', () => {
+    const final_q1 = document.getElementById('final_q1').value;
+    const final_q2 = document.getElementById('final_q2').value;
+    const final_q3 = document.getElementById('final_q3').value;
+    const final_comments = document.getElementById('final_comments').value.trim();
+    document.getElementById('final-modal').classList.remove('active');
+    showThankYou();
+  });
+}
+
+function showEndOfGame() {
+  document.getElementById('final-modal').classList.add('active');
+}
+
+function showThankYou() {
+  const pane = document.getElementById('invoice-details');
+  pane.innerHTML = '<h2>Thank you for participating!</h2>';
+}
+
+function saveResponse(data) {
+  console.log('Saving response', data);
+}
+
+// --- Initialization ---
+document.addEventListener('DOMContentLoaded', () => {
+  setupDemoForm();
+  document.getElementById('start-game').addEventListener('click', () => {
+    document.getElementById('rules-modal').classList.remove('active');
+    loadNextEmail();
+  });
+  setupRatingBubbles();
+  document.getElementById('submit-scales').addEventListener('click', submitRatings);
+  setupPlanForm();
+  setupQuestionForm();
+  setupFinalSurvey();
+
+  fetch('/api/invoices')
+    .then(response => response.json())
+    .then(data => {
+      allEmails = data;
+      filterEmailQueue();
+    })
+    .catch(err => console.error('Error loading invoices:', err));
+});
