@@ -1,5 +1,6 @@
 import os
 from flask import Flask, request, jsonify, render_template, make_response, send_file
+from flask_migrate import Migrate
 from models import db, Session, Demographics, Invoice
 from simulation import generate_invoices
 import csv
@@ -12,6 +13,7 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.secret_key = os.getenv('SECRET_KEY')
     db.init_app(app)
+    Migrate(app, db)
 
     @app.before_request
     def ensure_session():
@@ -118,13 +120,38 @@ def create_app():
         demos = Demographics.query.filter_by(session_id=sid).all()
         buf = io.StringIO()
         writer = csv.writer(buf)
-        writer.writerow(['id','company','round','action_choice','amount_due',...])
+        # write invoice CSV header
+        writer.writerow(['id','session_id','company','round','action_choice','amount_due','plan_details','question_text','receipt_code','block_rating','final_q1','final_q2','final_q3','final_comments'])
         for inv in invoices:
-            writer.writerow([inv.id,inv.company,inv.round,inv.action_choice,inv.amount_due])
+            writer.writerow([inv.id, inv.session_id, inv.company, inv.round, inv.action_choice, inv.amount_due, inv.plan_details, inv.question_text, inv.receipt_code, inv.block_rating, inv.final_q1, inv.final_q2, inv.final_q3, inv.final_comments])
         buf.seek(0)
-        return send_file(io.BytesIO(buf.read().encode()),
-                         mimetype='text/csv', attachment_filename='invoices.csv')
+        return send_file(io.BytesIO(buf.read().encode()), mimetype='text/csv', attachment_filename='invoices.csv')
 
+    # Dev-only: download all data across sessions
+    @app.route('/download-data-all')
+    def download_data_all():
+        # Export both demographics and invoice tables for all sessions
+        demos = Demographics.query.all()
+        invoices = Invoice.query.all()
+        zip_buf = io.BytesIO()
+        with zipfile.ZipFile(zip_buf, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # demographics.csv
+            demo_buf = io.StringIO()
+            demo_writer = csv.writer(demo_buf)
+            demo_writer.writerow(['id','session_id','age_range','gender','education','submitted_at'])
+            for d in demos:
+                demo_writer.writerow([d.id, d.session_id, d.age_range, d.gender, d.education, d.submitted_at.isoformat()])
+            zipf.writestr('demographics.csv', demo_buf.getvalue())
+            # invoices.csv
+            inv_buf = io.StringIO()
+            inv_writer = csv.writer(inv_buf)
+            inv_writer.writerow(['id','session_id','company','round','action_choice','amount_due','plan_details','question_text','receipt_code','block_rating','final_q1','final_q2','final_q3','final_comments'])
+            for inv in invoices:
+                inv_writer.writerow([inv.id, inv.session_id, inv.company, inv.round, inv.action_choice, inv.amount_due, inv.plan_details, inv.question_text, inv.receipt_code, inv.block_rating, inv.final_q1, inv.final_q2, inv.final_q3, inv.final_comments])
+            zipf.writestr('invoices.csv', inv_buf.getvalue())
+        zip_buf.seek(0)
+        return send_file(zip_buf, mimetype='application/zip', attachment_filename='all_data.zip').encode()),
+                         mimetype='text/csv', attachment_filename='invoices.csv')
     return app
 
 if __name__=='__main__':
