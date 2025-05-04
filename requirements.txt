@@ -1,5 +1,0 @@
-Flask
-Flask_SQLAlchemy
-python-dotenv
-gunicorn
-flask-migrate
